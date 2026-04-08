@@ -24,23 +24,24 @@
 
 <script type="module">
 // Импортируем модули Firebase
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
 
 // ТВОИ КЛЮЧИ СО СКРИНШОТА
-const firebaseConfig = {
-  apiKey: "AIzaSyAB5Z7MEW6p1xW_vSytL0YFisw5dxkx7iY",
-  authDomain: "ssonin-333a9.firebaseapp.com",
-  projectId: "ssonin-333a9",
-  storageBucket: "ssonin-333a9.firebasestorage.app",
-  messagingSenderId: "209859757037",
-  appId: "1:209859757037:web:a35107277f8e326ec29de4",
-  measurementId: "G-JYVJ8KNZD1"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyAB5Z7MEW6p1xW_vSytL0YFisw5dxkx7iY",
+    authDomain: "ssonin-333a9.firebaseapp.com",
+    projectId: "ssonin-333a9",
+    storageBucket: "ssonin-333a9.firebasestorage.app",
+    messagingSenderId: "209859757037",
+    appId: "1:209859757037:web:a35107277f8e326ec29de4",
+    measurementId: "G-JYVJ8KNZD1"
+  };
 
 // Инициализация
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+ const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+
 
 // Логика кнопки
 document.getElementById("feedbackForm").addEventListener("submit", async (e) => {
