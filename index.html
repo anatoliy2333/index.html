@@ -23,11 +23,11 @@
 </div>
 
 <script type="module">
-// Импортируем модули Firebase
+// ========== 1. ИМПОРТ МОДУЛЕЙ (ВОТ ЧЕГО НЕ ХВАТАЛО!) ==========
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
-// ТВОИ КЛЮЧИ СО СКРИНШОТА
+// ========== 2. КОНФИГУРАЦИЯ (ваши ключи) ==========
 const firebaseConfig = {
     apiKey: "AIzaSyAB5Z7MEW6p1xW_vSytL0YFisw5dxkx7iY",
     authDomain: "ssonin-333a9.firebaseapp.com",
@@ -36,29 +36,33 @@ const firebaseConfig = {
     messagingSenderId: "209859757037",
     appId: "1:209859757037:web:a35107277f8e326ec29de4",
     measurementId: "G-JYVJ8KNZD1"
-  };
-// Инициализация
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+};
 
-// Логика кнопки
+// ========== 3. ИНИЦИАЛИЗАЦИЯ ==========
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);  // ← ЭТО ТОЖЕ ВАЖНО!
+
+// ========== 4. ОТПРАВКА ДАННЫХ ==========
 document.getElementById("feedbackForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    
     const nameInput = document.getElementById("userName").value;
     const emailInput = document.getElementById("userEmail").value;
 
     try {
-    // Запись в коллекцию "requests"
-    await addDoc(collection(db, "requests"), {
-    name: nameInput,
-    email: emailInput,
-    timestamp: new Date()
-    });
-    alert("Готово! Данные сохранены в Firebase.");
-    document.getElementById("feedbackForm").reset();
+        // Добавляем документ в коллекцию "requests"
+        const docRef = await addDoc(collection(db, "requests"), {
+            name: nameInput,
+            email: emailInput,
+            timestamp: new Date()
+        });
+        
+        alert("✅ Готово! Данные сохранены в Firebase. ID: " + docRef.id);
+        document.getElementById("feedbackForm").reset();
+        
     } catch (error) {
-    console.error("Ошибка записи: ", error);
-    alert("Ошибка при отправке.");
+        console.error("Ошибка записи: ", error);
+        alert("❌ Ошибка: " + error.message);
     }
 });
 </script>
