@@ -27,7 +27,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
 
-// НОВЫЕ КЛЮЧИ (со второго скриншота - проект ssonin-333a9)
+// ТВОИ КЛЮЧИ СО СКРИНШОТА
 const firebaseConfig = {
     apiKey: "AIzaSyAB5Z7MEW6p1xW_vSytL0YFisw5dxkx7iY",
     authDomain: "ssonin-333a9.firebaseapp.com",
@@ -37,28 +37,28 @@ const firebaseConfig = {
     appId: "1:209859757037:web:a35107277f8e326ec29de4",
     measurementId: "G-JYVJ8KNZD1"
   };
-
-// Инициализация Firebase
+// Инициализация
 const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+const analytics = getAnalytics(app);
 
-// Логика кнопки отправки
+// Логика кнопки
 document.getElementById("feedbackForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const nameInput = document.getElementById("userName").value;
     const emailInput = document.getElementById("userEmail").value;
 
     try {
-        await addDoc(collection(db, "requests"), {
-            name: nameInput,
-            email: emailInput,
-            timestamp: new Date()
-        });
-        alert("Готово! Данные сохранены в Firebase.");
-        document.getElementById("feedbackForm").reset();
+    // Запись в коллекцию "requests"
+    await addDoc(collection(db, "requests"), {
+    name: nameInput,
+    email: emailInput,
+    timestamp: new Date()
+    });
+    alert("Готово! Данные сохранены в Firebase.");
+    document.getElementById("feedbackForm").reset();
     } catch (error) {
-        console.error("Ошибка записи: ", error);
-        alert("Ошибка при отправке: " + error.message);
+    console.error("Ошибка записи: ", error);
+    alert("Ошибка при отправке.");
     }
 });
 </script>
