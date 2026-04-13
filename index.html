@@ -110,7 +110,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
-// ========== 2. КОНФИГУРАЦИЯ ==========
+// ========== 2. КОНФИГУРАЦИЯ (ОДИН ПРОЕКТ!) ==========
+// Используем проект ssonin-333a9, куда уже сохраняются данные
 const firebaseConfig = {
     apiKey: "AIzaSyAB5Z7MEW6p1xW_vSytL0YFisw5dxkx7iY",
     authDomain: "ssonin-333a9.firebaseapp.com",
@@ -127,22 +128,45 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+// ВАЖНО: добавляем параметры для Google провайдера
+provider.setCustomParameters({
+    prompt: 'select_account'
+});
+
 // ========== 4. АВТОРИЗАЦИЯ ==========
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const userInfoDiv = document.getElementById('userInfo');
 const messageFormDiv = document.getElementById('messageForm');
 
-loginBtn.onclick = () => signInWithPopup(auth, provider);
-logoutBtn.onclick = () => signOut(auth);
+loginBtn.onclick = async () => {
+    try {
+        const result = await signInWithPopup(auth, provider);
+        console.log("Успешный вход:", result.user.displayName);
+    } catch (error) {
+        console.error("Ошибка входа:", error);
+        alert("Ошибка входа: " + error.message);
+    }
+};
+
+logoutBtn.onclick = async () => {
+    try {
+        await signOut(auth);
+        console.log("Выход выполнен");
+    } catch (error) {
+        console.error("Ошибка выхода:", error);
+    }
+};
 
 onAuthStateChanged(auth, (user) => {
+    console.log("Auth state changed:", user ? "Вошёл: " + user.displayName : "Не авторизован");
+    
     if (user) {
         loginBtn.style.display = "none";
         userInfoDiv.style.display = "flex";
         messageFormDiv.style.display = "block";
         document.getElementById("userName").innerText = user.displayName;
-        document.getElementById("userPhoto").src = user.photoURL;
+        document.getElementById("userPhoto").src = user.photoURL || 'https://via.placeholder.com/40';
         document.getElementById("name").value = user.displayName;
         document.getElementById("email").value = user.email;
     } else {
@@ -182,7 +206,7 @@ window.addLike = async (docId, currentLikes) => {
     try {
         const docRef = doc(db, "requests", docId);
         await updateDoc(docRef, {
-            likes: currentLikes + 1
+            likes: (currentLikes || 0) + 1
         });
     } catch (error) {
         console.error("Ошибка при добавлении лайка:", error);
@@ -226,7 +250,6 @@ function renderFeed(filterText = "") {
             timeStr = data.timestamp.toDate().toLocaleString();
         }
         
-        // Определяем, есть ли текст (из формы с авторизацией) или только name/email
         const displayText = data.text || data.email;
         const displayName = data.name || "Аноним";
         const displayEmail = data.email || "";
@@ -252,9 +275,12 @@ function renderFeed(filterText = "") {
 }
 
 // Слушаем ввод в поле поиска
-document.getElementById("searchInput").addEventListener("input", (e) => {
-    renderFeed(e.target.value);
-});
+const searchInput = document.getElementById("searchInput");
+if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+        renderFeed(e.target.value);
+    });
+}
 
 // ========== 9. REAL-TIME ОТОБРАЖЕНИЕ ВСЕХ ЗАПИСЕЙ ==========
 const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
@@ -281,4 +307,4 @@ function escapeHtml(str) {
 </script>
 
 </body>
-</html>+
+</html>
