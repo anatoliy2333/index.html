@@ -4,130 +4,293 @@
     <meta charset="UTF-8">
     <title>Мой облачный проект</title>
     <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
     .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
 
     .auth-bar { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
     .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; }
 
-    input[type="text"], input[type="email"] {
-        width: 100%; padding: 12px; margin: 8px 0;
-        border: 1px solid #000; border-radius: 6px; box-sizing: border-box;
-    }
+    input[type="text"], input[type="email"] { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; }
     button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.1s; }
     button:hover { background: #005bff; }
-    .logout-btn { background: #ff4757; padding: 12px 15px; width: auto; font-size: 14px; }
+    .logout-btn { background: #ff4757; padding: 8px 14px; width: auto; font-size: 13px; border-radius: 20px; }
 
-    .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 8px; width: 100%; max-width: 500px; }
+    /* ============================================
+       СИСТЕМА ЛИЧНЫХ СООБЩЕНИЙ (DM)
+       ============================================ */
+
+    .dm-wrapper {
+        width: 100%; max-width: 700px;
+        background: white; border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        display: flex; height: 520px;
+        overflow: hidden; margin-bottom: 20px;
+    }
+
+    /* --- Левая панель: список пользователей --- */
+    .dm-sidebar {
+        width: 220px; min-width: 220px;
+        border-right: 1px solid #eee;
+        display: flex; flex-direction: column;
+    }
+    .dm-sidebar-header {
+        padding: 16px 14px 12px;
+        font-weight: 700; font-size: 14px; color: #333;
+        border-bottom: 1px solid #eee;
+        background: #fafafa;
+    }
+    .dm-user-list { flex: 1; overflow-y: auto; }
+    .dm-user-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 12px 14px; cursor: pointer;
+        transition: background 0.15s; border-bottom: 1px solid #f5f5f5;
+    }
+    .dm-user-item:hover { background: #f0f6ff; }
+    .dm-user-item.active { background: #e8f0ff; }
+    .dm-user-avatar {
+        width: 36px; height: 36px; border-radius: 50%;
+        background: #007bff; color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 14px; flex-shrink: 0;
+        overflow: hidden;
+    }
+    .dm-user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .dm-user-name { font-size: 13px; font-weight: 600; color: #222; }
+    .dm-user-preview { font-size: 11px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+    .dm-unread {
+        margin-left: auto; background: #007bff; color: white;
+        border-radius: 50%; width: 18px; height: 18px;
+        font-size: 10px; display: flex; align-items: center; justify-content: center;
+        font-weight: 700; flex-shrink: 0;
+    }
+
+    /* --- Правая панель: переписка --- */
+    .dm-chat { flex: 1; display: flex; flex-direction: column; }
+    .dm-chat-header {
+        padding: 14px 16px; border-bottom: 1px solid #eee;
+        display: flex; align-items: center; gap: 10px;
+        background: #fafafa;
+    }
+    .dm-chat-header-avatar {
+        width: 32px; height: 32px; border-radius: 50%;
+        background: #007bff; color: white;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 13px; overflow: hidden; flex-shrink: 0;
+    }
+    .dm-chat-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .dm-chat-title { font-size: 14px; font-weight: 700; color: #222; }
+    .dm-chat-subtitle { font-size: 11px; color: #999; }
+
+    .dm-messages {
+        flex: 1; overflow-y: auto;
+        padding: 16px 14px; display: flex; flex-direction: column; gap: 8px;
+        background: #f9f9f9;
+    }
+    .dm-empty {
+        flex: 1; display: flex; align-items: center; justify-content: center;
+        color: #bbb; font-size: 13px; flex-direction: column; gap: 8px;
+    }
+
+    /* Пузыри сообщений */
+    .dm-msg { display: flex; gap: 8px; max-width: 85%; }
+    .dm-msg.mine { align-self: flex-end; flex-direction: row-reverse; }
+    .dm-msg.theirs { align-self: flex-start; }
+    .dm-msg-avatar {
+        width: 28px; height: 28px; border-radius: 50%;
+        background: #ccc; flex-shrink: 0; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 700; color: white;
+    }
+    .dm-msg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .dm-msg-body { display: flex; flex-direction: column; gap: 2px; }
+    .dm-bubble {
+        padding: 8px 12px; border-radius: 18px;
+        font-size: 13px; line-height: 1.5; word-break: break-word;
+    }
+    .dm-msg.mine .dm-bubble { background: #007bff; color: white; border-bottom-right-radius: 4px; }
+    .dm-msg.theirs .dm-bubble { background: white; color: #222; border: 1px solid #e5e5e5; border-bottom-left-radius: 4px; }
+    .dm-msg-time { font-size: 10px; color: #bbb; padding: 0 4px; }
+    .dm-msg.mine .dm-msg-time { text-align: right; }
+
+    /* Поле ввода */
+    .dm-input-area {
+        padding: 12px 14px; border-top: 1px solid #eee;
+        display: flex; gap: 8px; background: white;
+    }
+    .dm-input-area input {
+        flex: 1; padding: 10px 14px; border: 1px solid #ddd;
+        border-radius: 24px; font-size: 13px; outline: none; margin: 0;
+    }
+    .dm-input-area input:focus { border-color: #007bff; }
+    .dm-send-btn {
+        width: 40px; height: 40px; border-radius: 50%;
+        background: #007bff; border: none; color: white;
+        font-size: 16px; cursor: pointer; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .dm-send-btn:hover { background: #005bff; }
+
+    /* Заглушка «выберите собеседника» */
+    .dm-placeholder {
+        flex: 1; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        color: #bbb; font-size: 13px; gap: 8px;
+    }
+    .dm-placeholder-icon { font-size: 36px; }
+
+    /* Скрытая DM-панель */
+    #dmSection { display: none; }
+
+    /* Навигационные вкладки */
+    .tabs {
+        width: 100%; max-width: 700px; display: flex; gap: 0;
+        background: white; border-radius: 12px 12px 0 0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        overflow: hidden; margin-bottom: 0;
+    }
+    .tab-btn {
+        flex: 1; padding: 13px; background: white; border: none;
+        color: #888; font-size: 14px; font-weight: 600; cursor: pointer;
+        border-bottom: 2px solid transparent; border-radius: 0;
+        transition: 0.15s;
+    }
+    .tab-btn.active { color: #007bff; border-bottom-color: #007bff; background: #f5f9ff; }
+    .tab-btn:hover:not(.active) { background: #f8f8f8; }
+
+    /* Лента постов */
+    .feed-section { display: none; width: 100%; max-width: 700px; }
+    .feed-section.active { display: block; }
+
+    .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 8px; }
     .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .post-avatar { width: 30px; height: 30px; border-radius: 50%; }
-    .like-btn { cursor: pointer; border: none; background: #f8f9fa; padding: 5px 12px; border-radius: 20px; margin-top: 10px; width: auto; }
+    .like-btn { cursor: pointer; border: 1px solid #eee; background: #f8f9fa; padding: 5px 12px; border-radius: 20px; margin-top: 10px; width: auto; font-size: 13px; color: #333; }
     .time { font-size: 11px; color: #999; margin-left: auto; }
-
-    .posts-container { width: 100%; max-width: 500px; margin-top: 30px; }
-    .post-name { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-    .post-email { color: #666; font-size: 14px; margin-bottom: 10px; word-break: break-all; }
-    .like-count { margin-left: 8px; font-weight: bold; }
-    h3 { margin-bottom: 20px; }
-    hr { margin: 20px 0; border: none; border-top: 1px solid #ddd; }
-
-    .delete-btn { background: #cc0000; color: white; border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 13px; margin-left: 8px; transition: 0.2s; width: auto; }
+    .post-name { font-weight: bold; font-size: 14px; }
+    .post-email { color: #666; font-size: 13px; margin-bottom: 6px; }
+    .like-count { margin-left: 6px; font-weight: bold; }
+    .delete-btn { background: #cc0000; color: white; border: none; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; margin-left: 8px; width: auto; }
     .delete-btn:hover { background: #990000; }
+    .post-image { width: 100%; max-height: 280px; object-fit: cover; border-radius: 8px; margin: 8px 0; display: block; cursor: pointer; }
 
-    .search-container { width: 100%; max-width: 500px; margin-top: 10px; margin-bottom: 0; }
-    .search-container input { margin-bottom: 0; border: 1px solid #aaa; border-radius: 5px; padding: 10px; font-size: 14px; width: 100%; box-sizing: border-box; }
+    .search-box { width: 100%; max-width: 700px; margin: 12px 0 0; }
+    .search-box input { width: 100%; padding: 11px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
 
-    /* ====== ЗАГРУЗКА КАРТИНОК ====== */
-    .image-upload-area {
-        border: 2px dashed #ccc; border-radius: 8px; padding: 16px;
-        text-align: center; cursor: pointer; margin: 10px 0;
-        transition: border-color 0.2s, background 0.2s; background: #fafafa;
-    }
+    /* Форма поста */
+    .post-form { width: 100%; max-width: 700px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; display: none; }
+    .post-form.active { display: block; }
+    .post-form input[type="text"] { margin: 6px 0; }
+    .image-upload-area { border: 2px dashed #ccc; border-radius: 8px; padding: 14px; text-align: center; cursor: pointer; margin: 8px 0; background: #fafafa; transition: 0.2s; }
     .image-upload-area:hover { border-color: #007bff; background: #f0f6ff; }
-    .image-upload-area.dragging { border-color: #007bff; background: #e8f0ff; }
     #fileInput { display: none; }
-    #imagePreview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 10px; display: none; object-fit: cover; }
-    .upload-progress { display: none; margin-top: 10px; }
-    .progress-bar-bg { background: #e0e0e0; border-radius: 10px; height: 8px; overflow: hidden; }
+    #imagePreview { max-width: 100%; max-height: 180px; border-radius: 8px; margin-top: 8px; display: none; object-fit: cover; }
+    .progress-bar-bg { background: #e0e0e0; border-radius: 10px; height: 6px; margin-top: 8px; overflow: hidden; display: none; }
     .progress-bar-fill { height: 100%; background: #007bff; width: 0%; border-radius: 10px; transition: width 0.2s; }
-    .progress-text { font-size: 12px; color: #666; margin-top: 4px; text-align: center; }
-
-    /* Картинка внутри поста */
-    .post-image { width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin: 10px 0; display: block; cursor: pointer; }
 
     /* Лайтбокс */
-    #lightbox {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,0.85); z-index: 1000;
-        align-items: center; justify-content: center; flex-direction: column;
-    }
+    #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; }
     #lightbox.open { display: flex; }
     #lightbox img { max-width: 90vw; max-height: 85vh; border-radius: 10px; object-fit: contain; }
-    #lightbox .close-lb {
-        position: absolute; top: 20px; right: 28px;
-        color: white; font-size: 32px; cursor: pointer; line-height: 1;
-        background: none; border: none; width: auto; padding: 0;
-    }
+    #lightbox .close-lb { position: absolute; top: 18px; right: 24px; color: white; font-size: 30px; cursor: pointer; background: none; border: none; width: auto; padding: 0; }
+
+    hr { width: 100%; max-width: 700px; margin: 0 0 16px; border: none; border-top: 1px solid #e0e0e0; }
     </style>
 </head>
 <body>
 
-<!-- Лайтбокс -->
 <div id="lightbox">
     <button class="close-lb" onclick="closeLightbox()">✕</button>
-    <img id="lightboxImg" src="" alt="Полный размер">
+    <img id="lightboxImg" src="" alt="">
 </div>
 
-<div id="authSection" class="container" style="max-width: 500px; text-align: center;">
+<!-- АВТОРИЗАЦИЯ -->
+<div id="authSection" class="container" style="max-width:700px; text-align:center;">
+    <p style="color:#666; margin-bottom:12px; font-size:14px;">Войдите, чтобы общаться и оставлять записи</p>
     <button id="loginBtn">Войти через Google</button>
-    <div id="userInfo" style="display: none;" class="auth-bar">
-        <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
-        <span id="userNameDisplay" style="font-weight: bold;"></span>
+    <div id="userInfo" style="display:none;" class="auth-bar">
+        <img id="userPhoto" class="user-avatar" src="" alt="">
+        <span id="userNameDisplay" style="font-weight:bold; font-size:15px;"></span>
         <button id="logoutBtn" class="logout-btn">Выйти</button>
     </div>
 </div>
 
-<div id="messageForm" class="container" style="display: none;">
-    <h3>Создать запись</h3>
-    <input type="text" id="name" placeholder="Имя профиля" readonly>
-    <input type="email" id="email" placeholder="Ваш Email" readonly>
-    <input type="text" id="content" placeholder="Что у вас нового?">
+<!-- ВКЛАДКИ -->
+<div class="tabs" id="mainTabs" style="display:none;">
+    <button class="tab-btn active" onclick="switchTab('feed')">📋 Лента</button>
+    <button class="tab-btn" onclick="switchTab('dm')" id="dmTabBtn">💬 Сообщения</button>
+</div>
 
-    <!-- ЗОНА ЗАГРУЗКИ КАРТИНКИ -->
+<!-- ФОРМА ПОСТА -->
+<div class="post-form" id="postForm">
+    <h3 style="margin-bottom:12px; font-size:15px;">✏️ Новая запись</h3>
+    <input type="text" id="name" placeholder="Имя" readonly>
+    <input type="text" id="content" placeholder="Что у вас нового?">
     <div class="image-upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
-        <div id="uploadHint">📷 Нажмите или перетащите картинку сюда</div>
-        <img id="imagePreview" src="" alt="Превью">
+        <div id="uploadHint">📷 Добавить картинку (необязательно)</div>
+        <img id="imagePreview" src="" alt="">
     </div>
     <input type="file" id="fileInput" accept="image/*">
-
-    <div class="upload-progress" id="uploadProgress">
-        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
-        <div class="progress-text" id="progressText">Загрузка: 0%</div>
-    </div>
-
-    <button id="submitBtn">Отправить</button>
+    <div class="progress-bar-bg" id="progressBg"><div class="progress-bar-fill" id="progressFill"></div></div>
+    <button id="submitBtn" style="margin-top:10px;">Опубликовать</button>
 </div>
 
-<hr>
-
-<div class="search-container">
-    <input type="text" id="searchInput" placeholder="🔍 Поиск по имени...">
-</div>
-
-<div class="posts-container">
-    <h3>📋 Все заявки</h3>
+<!-- ЛЕНТА -->
+<div class="feed-section active" id="feedSection">
+    <div class="search-box"><input type="text" id="searchInput" placeholder="🔍 Поиск по имени..."></div>
     <div id="feed"></div>
+</div>
+
+<!-- =========================================
+     СИСТЕМА ЛИЧНЫХ СООБЩЕНИЙ (DM)
+     ========================================= -->
+<div id="dmSection">
+    <div class="dm-wrapper">
+
+        <!-- Левая панель: список пользователей -->
+        <div class="dm-sidebar">
+            <div class="dm-sidebar-header">💬 Собеседники</div>
+            <div class="dm-user-list" id="dmUserList">
+                <div style="padding:20px; text-align:center; color:#bbb; font-size:12px;">
+                    Нет других пользователей
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая панель: чат -->
+        <div class="dm-chat" id="dmChat">
+            <div class="dm-placeholder" id="dmPlaceholder">
+                <div class="dm-placeholder-icon">💬</div>
+                <div>Выберите собеседника</div>
+            </div>
+
+            <div id="dmChatActive" style="display:none; flex-direction:column; flex:1;">
+                <div class="dm-chat-header" id="dmChatHeader">
+                    <div class="dm-chat-header-avatar" id="dmChatAvatar"></div>
+                    <div>
+                        <div class="dm-chat-title" id="dmChatName"></div>
+                        <div class="dm-chat-subtitle" id="dmChatEmail"></div>
+                    </div>
+                </div>
+                <div class="dm-messages" id="dmMessages"></div>
+                <div class="dm-input-area">
+                    <input type="text" id="dmInput" placeholder="Ваше сообщение...">
+                    <button class="dm-send-btn" id="dmSendBtn">➤</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import {
-    getFirestore, addDoc, collection, query, orderBy,
-    onSnapshot, updateDoc, deleteDoc, doc, serverTimestamp
+    getFirestore, addDoc, collection, query, orderBy, where,
+    onSnapshot, updateDoc, deleteDoc, doc, serverTimestamp,
+    setDoc, getDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 import {
-    getAuth, signInWithPopup, GoogleAuthProvider,
-    signOut, onAuthStateChanged
+    getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 import {
     getStorage, ref, uploadBytesResumable, getDownloadURL
@@ -139,8 +302,7 @@ const firebaseConfig = {
     projectId: "ssonin-333a9",
     storageBucket: "ssonin-333a9.firebasestorage.app",
     messagingSenderId: "209859757037",
-    appId: "1:209859757037:web:a35107277f8e326ec29de4",
-    measurementId: "G-JYVJ8KNZD1"
+    appId: "1:209859757037:web:a35107277f8e326ec29de4"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -157,61 +319,271 @@ document.getElementById('loginBtn').onclick = async () => {
 };
 document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
-onAuthStateChanged(auth, (user) => {
-    console.log("Auth state changed:", user ? "Вошёл: " + user.displayName : "Не авторизован");
+onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('loginBtn').style.display = "none";
         document.getElementById('userInfo').style.display = "flex";
-        document.getElementById('messageForm').style.display = "block";
-        document.getElementById("userNameDisplay").innerText = user.displayName;
-        document.getElementById("userPhoto").src = user.photoURL || '';
-        document.getElementById("name").value = user.displayName;
-        document.getElementById("email").value = user.email;
+        document.getElementById('userNameDisplay').innerText = user.displayName;
+        document.getElementById('userPhoto').src = user.photoURL || '';
+        document.getElementById('name').value = user.displayName;
+        document.getElementById('mainTabs').style.display = "flex";
+        document.getElementById('postForm').classList.add('active');
+
+        // Сохраняем/обновляем профиль пользователя в коллекции users
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            displayName: user.displayName,
+            email: user.email,
+            photoURL: user.photoURL || "",
+            lastSeen: serverTimestamp()
+        }, { merge: true });
+
+        loadUsers(user.uid);
     } else {
         document.getElementById('loginBtn').style.display = "block";
         document.getElementById('userInfo').style.display = "none";
-        document.getElementById('messageForm').style.display = "none";
-        clearImagePreview();
+        document.getElementById('mainTabs').style.display = "none";
+        document.getElementById('postForm').classList.remove('active');
+        document.getElementById('dmSection').style.display = "none";
+        document.getElementById('feedSection').classList.add('active');
+        currentTab = 'feed';
+        stopDmListener();
     }
 });
 
-// ========================================================
-// ======= НОВАЯ ФУНКЦИЯ: ЗАГРУЗКА КАРТИНКИ ===============
-// ========================================================
-// Шаг 1. Пользователь выбирает файл кликом или drag&drop.
-// Шаг 2. FileReader читает файл локально и показывает
-//         превью — без обращения к серверу.
-// Шаг 3. При отправке формы вызывается uploadImage():
-//         - ref() создаёт путь в Storage: images/uid/timestamp_name
-//         - uploadBytesResumable() начинает загрузку и
-//           позволяет слушать прогресс через on('state_changed')
-//         - по завершении getDownloadURL() возвращает
-//           публичную HTTPS-ссылку на файл
-// Шаг 4. Эта ссылка сохраняется в поле imageUrl документа
-//         Firestore вместе с остальными данными поста.
-// Шаг 5. renderFeed() проверяет наличие imageUrl и если
-//         оно не пустое — вставляет <img> в карточку поста.
-//         Клик по картинке открывает лайтбокс.
-// ========================================================
+// ========== ВКЛАДКИ ==========
+let currentTab = 'feed';
+window.switchTab = (tab) => {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', (i === 0 && tab === 'feed') || (i === 1 && tab === 'dm'));
+    });
+    document.getElementById('feedSection').classList.toggle('active', tab === 'feed');
+    document.getElementById('postForm').classList.toggle('active', tab === 'feed');
+    document.getElementById('dmSection').style.display = tab === 'dm' ? 'block' : 'none';
+};
 
+// ================================================================
+// ======= СИСТЕМА ЛИЧНЫХ СООБЩЕНИЙ (DM) ==========================
+// ================================================================
+//
+// Структура данных в Firestore:
+//
+//  users/{uid}                  — профиль каждого пользователя
+//      uid, displayName, email, photoURL, lastSeen
+//
+//  conversations/{convId}       — мета-документ переписки
+//      participants: [uid1, uid2]
+//      lastMessage: "текст"
+//      lastTime: timestamp
+//
+//  conversations/{convId}/messages/{msgId}  — сообщения
+//      senderId, text, timestamp
+//
+// convId формируется детерминированно: меньший uid + "_" + больший uid.
+// Это гарантирует, что два пользователя всегда используют
+// одну и ту же «комнату», независимо от того, кто написал первым.
+//
+// Алгоритм отправки:
+//  1. Вычислить convId по uid обоих участников.
+//  2. addDoc в subcollection messages — записать сообщение.
+//  3. setDoc в conversations/{convId} — обновить lastMessage
+//     (для предпросмотра в списке собеседников).
+//  4. onSnapshot на messages следит за обновлениями real-time.
+// ================================================================
+
+let currentConvId = null;
+let dmListenerUnsub = null;
+let knownUsers = [];       // все пользователи кроме себя
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => { currentUser = user; });
+
+// Загружаем список всех пользователей из коллекции users
+async function loadUsers(myUid) {
+    const snap = await getDocs(collection(db, "users"));
+    knownUsers = [];
+    snap.forEach(d => {
+        if (d.id !== myUid) knownUsers.push(d.data());
+    });
+    renderUserList();
+}
+
+function getConvId(uid1, uid2) {
+    // Детерминированный ID: всегда меньший_больший
+    return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
+}
+
+function renderUserList() {
+    const list = document.getElementById('dmUserList');
+    if (knownUsers.length === 0) {
+        list.innerHTML = `<div style="padding:20px;text-align:center;color:#bbb;font-size:12px;">Нет других пользователей</div>`;
+        return;
+    }
+    list.innerHTML = "";
+    knownUsers.forEach(u => {
+        const initials = (u.displayName || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+        const avatarHtml = u.photoURL
+            ? `<img src="${u.photoURL}" alt="">`
+            : initials;
+
+        const item = document.createElement('div');
+        item.className = 'dm-user-item' + (currentConvId === getConvId(currentUser.uid, u.uid) ? ' active' : '');
+        item.innerHTML = `
+            <div class="dm-user-avatar">${avatarHtml}</div>
+            <div style="min-width:0;">
+                <div class="dm-user-name">${escapeHtml(u.displayName || "Пользователь")}</div>
+                <div class="dm-user-preview" id="preview_${u.uid}">...</div>
+            </div>
+        `;
+        item.onclick = () => openConversation(u);
+        list.appendChild(item);
+        loadLastMessage(u.uid, `preview_${u.uid}`);
+    });
+}
+
+// Подгружаем последнее сообщение для превью в списке
+async function loadLastMessage(otherUid, previewId) {
+    if (!currentUser) return;
+    const convId = getConvId(currentUser.uid, otherUid);
+    const convRef = doc(db, "conversations", convId);
+    const snap = await getDoc(convRef);
+    if (snap.exists()) {
+        const el = document.getElementById(previewId);
+        if (el) el.textContent = snap.data().lastMessage || "...";
+    }
+}
+
+// Открываем переписку с конкретным пользователем
+function openConversation(otherUser) {
+    if (!currentUser) return;
+
+    currentConvId = getConvId(currentUser.uid, otherUser.uid);
+
+    // Обновляем активный элемент в списке
+    document.querySelectorAll('.dm-user-item').forEach(el => el.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    // Показываем шапку чата
+    const avatar = document.getElementById('dmChatAvatar');
+    if (otherUser.photoURL) {
+        avatar.innerHTML = `<img src="${otherUser.photoURL}" alt="">`;
+    } else {
+        avatar.textContent = (otherUser.displayName || "?").split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase();
+    }
+    document.getElementById('dmChatName').textContent = otherUser.displayName || "Пользователь";
+    document.getElementById('dmChatEmail').textContent = otherUser.email || "";
+
+    document.getElementById('dmPlaceholder').style.display = 'none';
+    document.getElementById('dmChatActive').style.display = 'flex';
+
+    // Запускаем real-time слушатель сообщений
+    listenMessages(currentConvId);
+}
+
+// Real-time слушатель сообщений переписки
+function listenMessages(convId) {
+    stopDmListener();
+
+    const msgsRef = collection(db, "conversations", convId, "messages");
+    const q = query(msgsRef, orderBy("timestamp", "asc"));
+
+    dmListenerUnsub = onSnapshot(q, (snapshot) => {
+        const container = document.getElementById('dmMessages');
+        container.innerHTML = "";
+
+        if (snapshot.empty) {
+            container.innerHTML = `<div class="dm-empty"><span>💬</span><span>Начните переписку</span></div>`;
+            return;
+        }
+
+        snapshot.forEach(d => {
+            const data = d.data();
+            const isMine = data.senderId === currentUser.uid;
+            const time = data.timestamp?.toDate
+                ? data.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : "";
+
+            const senderPhoto = isMine ? (currentUser.photoURL || "") : "";
+            const senderInitials = isMine
+                ? (currentUser.displayName || "?").split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase()
+                : "";
+
+            const avatarHtml = senderPhoto
+                ? `<img src="${senderPhoto}" alt="">`
+                : senderInitials;
+
+            const msgEl = document.createElement('div');
+            msgEl.className = `dm-msg ${isMine ? 'mine' : 'theirs'}`;
+            msgEl.innerHTML = `
+                <div class="dm-msg-avatar">${avatarHtml}</div>
+                <div class="dm-msg-body">
+                    <div class="dm-bubble">${escapeHtml(data.text)}</div>
+                    <div class="dm-msg-time">${time}</div>
+                </div>
+            `;
+            container.appendChild(msgEl);
+        });
+
+        // Прокручиваем вниз
+        container.scrollTop = container.scrollHeight;
+    });
+}
+
+function stopDmListener() {
+    if (dmListenerUnsub) { dmListenerUnsub(); dmListenerUnsub = null; }
+}
+
+// Отправка сообщения
+async function sendDmMessage() {
+    const input = document.getElementById('dmInput');
+    const text = input.value.trim();
+    if (!text || !currentConvId || !currentUser) return;
+    input.value = "";
+
+    try {
+        const msgsRef = collection(db, "conversations", currentConvId, "messages");
+        await addDoc(msgsRef, {
+            senderId: currentUser.uid,
+            senderName: currentUser.displayName,
+            text: text,
+            timestamp: serverTimestamp()
+        });
+
+        // Обновляем мета-документ переписки для превью
+        await setDoc(doc(db, "conversations", currentConvId), {
+            participants: currentConvId.split("_"),
+            lastMessage: text,
+            lastTime: serverTimestamp()
+        }, { merge: true });
+
+        // Обновляем превью в сайдбаре
+        renderUserList();
+
+    } catch (e) {
+        console.error("Ошибка отправки:", e);
+        alert("❌ Ошибка: " + e.message);
+    }
+}
+
+document.getElementById('dmSendBtn').onclick = sendDmMessage;
+document.getElementById('dmInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendDmMessage();
+});
+
+// ========== ЛЕНТА ПОСТОВ ==========
 let selectedFile = null;
-
 const fileInput = document.getElementById('fileInput');
 const imagePreview = document.getElementById('imagePreview');
 const uploadHint = document.getElementById('uploadHint');
 const uploadArea = document.getElementById('uploadArea');
 
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files[0]) handleFileSelect(e.target.files[0]);
-});
-
-uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragging'); });
-uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragging'));
+fileInput.addEventListener('change', (e) => { if (e.target.files[0]) handleFileSelect(e.target.files[0]); });
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); });
 uploadArea.addEventListener('drop', (e) => {
     e.preventDefault();
-    uploadArea.classList.remove('dragging');
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) handleFileSelect(file);
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) handleFileSelect(f);
 });
 
 function handleFileSelect(file) {
@@ -226,153 +598,100 @@ function handleFileSelect(file) {
 }
 
 function clearImagePreview() {
-    selectedFile = null;
-    imagePreview.src = '';
-    imagePreview.style.display = 'none';
-    uploadHint.textContent = '📷 Нажмите или перетащите картинку сюда';
+    selectedFile = null; imagePreview.src = ''; imagePreview.style.display = 'none';
+    uploadHint.textContent = '📷 Добавить картинку (необязательно)';
     fileInput.value = '';
-    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('progressBg').style.display = 'none';
     document.getElementById('progressFill').style.width = '0%';
 }
 
 function uploadImage(file, userId) {
     return new Promise((resolve, reject) => {
         const storageRef = ref(storage, `images/${userId}/${Date.now()}_${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-        document.getElementById('uploadProgress').style.display = 'block';
-
-        uploadTask.on('state_changed',
-            (snapshot) => {
-                const percent = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                document.getElementById('progressFill').style.width = percent + '%';
-                document.getElementById('progressText').textContent = `Загрузка: ${percent}%`;
+        const task = uploadBytesResumable(storageRef, file);
+        document.getElementById('progressBg').style.display = 'block';
+        task.on('state_changed',
+            (s) => {
+                const pct = Math.round(s.bytesTransferred / s.totalBytes * 100);
+                document.getElementById('progressFill').style.width = pct + '%';
             },
             reject,
-            async () => resolve(await getDownloadURL(uploadTask.snapshot.ref))
+            async () => resolve(await getDownloadURL(task.snapshot.ref))
         );
     });
 }
 
-// ========== ОТПРАВКА ПОСТА ==========
-document.getElementById("submitBtn").addEventListener("click", async () => {
-    const content = document.getElementById("content").value;
-    if (!content) return alert("Введите текст сообщения");
+document.getElementById('submitBtn').addEventListener('click', async () => {
+    const text = document.getElementById('content').value;
+    if (!text) return alert("Введите текст");
     const user = auth.currentUser;
-    if (!user) return alert("Вы не авторизованы");
-
-    const submitBtn = document.getElementById("submitBtn");
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Сохранение...";
-
+    if (!user) return alert("Войдите в аккаунт");
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true; btn.textContent = "Публикация...";
     try {
         let imageUrl = "";
-        if (selectedFile) {
-            imageUrl = await uploadImage(selectedFile, user.uid);
-        }
-
+        if (selectedFile) imageUrl = await uploadImage(selectedFile, user.uid);
         await addDoc(collection(db, "requests"), {
-            name: user.displayName,
-            email: user.email,
-            photo: user.photoURL,
-            text: content,
-            imageUrl: imageUrl,
-            likes: 0,
-            timestamp: serverTimestamp()
+            name: user.displayName, email: user.email, photo: user.photoURL,
+            text, imageUrl, likes: 0, timestamp: serverTimestamp()
         });
-
         document.getElementById('content').value = "";
         clearImagePreview();
-        alert("✅ Запись сохранена!");
-    } catch (e) {
-        console.error("Ошибка:", e);
-        alert("❌ Ошибка: " + e.message);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Отправить";
-    }
+    } catch (e) { alert("❌ " + e.message); }
+    finally { btn.disabled = false; btn.textContent = "Опубликовать"; }
 });
 
-// ========== ЛАЙКИ ==========
-window.addLike = async (docId, currentLikes) => {
-    try { await updateDoc(doc(db, "requests", docId), { likes: (currentLikes || 0) + 1 }); }
-    catch (e) { alert("❌ Не удалось поставить лайк"); }
+window.addLike = async (id, n) => {
+    try { await updateDoc(doc(db, "requests", id), { likes: n + 1 }); } catch (e) {}
 };
-
-// ========== УДАЛЕНИЕ ==========
-window.deleteRequest = async (docId) => {
-    if (!confirm("Удалить эту заявку?")) return;
-    try { await deleteDoc(doc(db, "requests", docId)); }
-    catch (e) { alert("❌ Не удалось удалить: " + e.message); }
+window.deleteRequest = async (id) => {
+    if (!confirm("Удалить?")) return;
+    try { await deleteDoc(doc(db, "requests", id)); } catch (e) { alert("❌ " + e.message); }
 };
-
-// ========== ЛАЙТБОКС ==========
 window.openLightbox = (url) => {
     document.getElementById('lightboxImg').src = url;
     document.getElementById('lightbox').classList.add('open');
 };
 window.closeLightbox = () => document.getElementById('lightbox').classList.remove('open');
-document.getElementById('lightbox').addEventListener('click', (e) => {
+document.getElementById('lightbox').addEventListener('click', e => {
     if (e.target === document.getElementById('lightbox')) closeLightbox();
 });
 
-// ========== ФИЛЬТРАЦИЯ ==========
 let allDocs = [];
-
-function renderFeed(filterText = "") {
+function renderFeed(filter = "") {
     const feed = document.getElementById("feed");
     feed.innerHTML = "";
-
-    const filtered = allDocs.filter(item =>
-        item.data.name && item.data.name.toLowerCase().includes(filterText.toLowerCase())
-    );
-
-    if (filtered.length === 0) {
-        feed.innerHTML = "<p style='text-align: center; color: #999;'>Ничего не найдено.</p>";
-        return;
-    }
-
+    const filtered = allDocs.filter(i => i.data.name?.toLowerCase().includes(filter.toLowerCase()));
+    if (!filtered.length) { feed.innerHTML = "<p style='text-align:center;color:#aaa;padding:20px;'>Ничего не найдено</p>"; return; }
     filtered.forEach(({ id, data }) => {
-        let timeStr = "только что";
-        if (data.timestamp && data.timestamp.toDate) {
-            timeStr = data.timestamp.toDate().toLocaleString();
-        }
-
-        const imageHtml = data.imageUrl
-            ? `<img class="post-image" src="${data.imageUrl}" alt="Фото" onclick="openLightbox('${data.imageUrl}')" title="Нажмите для просмотра">`
-            : "";
-
+        const time = data.timestamp?.toDate ? data.timestamp.toDate().toLocaleString() : "только что";
+        const img = data.imageUrl ? `<img class="post-image" src="${data.imageUrl}" onclick="openLightbox('${data.imageUrl}')">` : "";
         feed.innerHTML += `
             <div class="post">
                 <div class="post-header">
-                    <img class="post-avatar" src="${escapeHtml(data.photo || '')}" alt="avatar">
-                    <div class="post-name">👤 ${escapeHtml(data.name || 'Аноним')}</div>
-                    <div class="time">🕐 ${timeStr}</div>
+                    <img class="post-avatar" src="${escapeHtml(data.photo||'')}" alt="">
+                    <div class="post-name">👤 ${escapeHtml(data.name||'')}</div>
+                    <div class="time">🕐 ${time}</div>
                 </div>
-                <div class="post-email">📧 ${escapeHtml(data.email || '')}</div>
-                <p>${escapeHtml(data.text || '')}</p>
-                ${imageHtml}
-                <button class="like-btn" onclick="addLike('${id}', ${data.likes || 0})">
-                    ❤️ Лайк <span class="like-count">${data.likes || 0}</span>
-                </button>
-                <button class="delete-btn" onclick="deleteRequest('${id}')">
-                    🗑 Удалить
-                </button>
-            </div>
-        `;
+                <div class="post-email">📧 ${escapeHtml(data.email||'')}</div>
+                <p style="font-size:14px;margin:6px 0;">${escapeHtml(data.text||data.email||'')}</p>
+                ${img}
+                <button class="like-btn" onclick="addLike('${id}',${data.likes||0})">❤️ <span class="like-count">${data.likes||0}</span></button>
+                <button class="delete-btn" onclick="deleteRequest('${id}')">🗑 Удалить</button>
+            </div>`;
     });
 }
 
-document.getElementById("searchInput").addEventListener("input", (e) => renderFeed(e.target.value));
-
+document.getElementById('searchInput').addEventListener('input', e => renderFeed(e.target.value));
 const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-onSnapshot(q, (snapshot) => {
-    allDocs = snapshot.docs.map(d => ({ id: d.id, data: d.data() }));
-    renderFeed(document.getElementById("searchInput").value);
+onSnapshot(q, snap => {
+    allDocs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+    renderFeed(document.getElementById('searchInput').value);
 });
 
-function escapeHtml(str) {
-    if (!str) return "";
-    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+function escapeHtml(s) {
+    if (!s) return "";
+    return s.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 }
 </script>
 </body>
