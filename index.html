@@ -139,8 +139,8 @@
     }
     .dm-placeholder-icon { font-size: 36px; }
 
-    /* Скрытая DM-панель */
-    #dmSection { display: none; }
+    /* Скрытая DM-панель — ИСПРАВЛЕНО: display flex для корректного layout */
+    #dmSection { display: none; width: 100%; max-width: 700px; justify-content: center; }
 
     /* Навигационные вкладки */
     .tabs {
@@ -319,7 +319,10 @@ document.getElementById('loginBtn').onclick = async () => {
 };
 document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
+// ИСПРАВЛЕНО: единый onAuthStateChanged, currentUser устанавливается первым делом
 onAuthStateChanged(auth, async (user) => {
+    currentUser = user; // ← FIX 1: сразу сохраняем текущего пользователя
+
     if (user) {
         document.getElementById('loginBtn').style.display = "none";
         document.getElementById('userInfo').style.display = "flex";
@@ -344,6 +347,7 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('userInfo').style.display = "none";
         document.getElementById('mainTabs').style.display = "none";
         document.getElementById('postForm').classList.remove('active');
+        // ИСПРАВЛЕНО: display flex вместо none
         document.getElementById('dmSection').style.display = "none";
         document.getElementById('feedSection').classList.add('active');
         currentTab = 'feed';
@@ -360,44 +364,23 @@ window.switchTab = (tab) => {
     });
     document.getElementById('feedSection').classList.toggle('active', tab === 'feed');
     document.getElementById('postForm').classList.toggle('active', tab === 'feed');
-    document.getElementById('dmSection').style.display = tab === 'dm' ? 'block' : 'none';
+    // ИСПРАВЛЕНО: display flex чтобы dm-wrapper корректно растягивался
+    document.getElementById('dmSection').style.display = tab === 'dm' ? 'flex' : 'none';
+
+    // FIX 2: перезагружаем список пользователей при каждом открытии вкладки DM
+    if (tab === 'dm' && currentUser) {
+        loadUsers(currentUser.uid);
+    }
 };
 
 // ================================================================
 // ======= СИСТЕМА ЛИЧНЫХ СООБЩЕНИЙ (DM) ==========================
 // ================================================================
-//
-// Структура данных в Firestore:
-//
-//  users/{uid}                  — профиль каждого пользователя
-//      uid, displayName, email, photoURL, lastSeen
-//
-//  conversations/{convId}       — мета-документ переписки
-//      participants: [uid1, uid2]
-//      lastMessage: "текст"
-//      lastTime: timestamp
-//
-//  conversations/{convId}/messages/{msgId}  — сообщения
-//      senderId, text, timestamp
-//
-// convId формируется детерминированно: меньший uid + "_" + больший uid.
-// Это гарантирует, что два пользователя всегда используют
-// одну и ту же «комнату», независимо от того, кто написал первым.
-//
-// Алгоритм отправки:
-//  1. Вычислить convId по uid обоих участников.
-//  2. addDoc в subcollection messages — записать сообщение.
-//  3. setDoc в conversations/{convId} — обновить lastMessage
-//     (для предпросмотра в списке собеседников).
-//  4. onSnapshot на messages следит за обновлениями real-time.
-// ================================================================
 
 let currentConvId = null;
 let dmListenerUnsub = null;
-let knownUsers = [];       // все пользователи кроме себя
-let currentUser = null;
-
-onAuthStateChanged(auth, (user) => { currentUser = user; });
+let knownUsers = [];
+let currentUser = null; // объявляем на уровне модуля
 
 // Загружаем список всех пользователей из коллекции users
 async function loadUsers(myUid) {
@@ -410,7 +393,6 @@ async function loadUsers(myUid) {
 }
 
 function getConvId(uid1, uid2) {
-    // Детерминированный ID: всегда меньший_больший
     return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
 }
 
@@ -436,13 +418,13 @@ function renderUserList() {
                 <div class="dm-user-preview" id="preview_${u.uid}">...</div>
             </div>
         `;
-        item.onclick = () => openConversation(u);
+        // FIX 3: передаём event явно в openConversation
+        item.onclick = (e) => openConversation(u, e);
         list.appendChild(item);
         loadLastMessage(u.uid, `preview_${u.uid}`);
     });
 }
 
-// Подгружаем последнее сообщение для превью в списке
 async function loadLastMessage(otherUid, previewId) {
     if (!currentUser) return;
     const convId = getConvId(currentUser.uid, otherUid);
@@ -454,15 +436,17 @@ async function loadLastMessage(otherUid, previewId) {
     }
 }
 
-// Открываем переписку с конкретным пользователем
-function openConversation(otherUser) {
+// FIX 3: принимаем event как параметр вместо глобального window.event
+function openConversation(otherUser, event) {
     if (!currentUser) return;
 
     currentConvId = getConvId(currentUser.uid, otherUser.uid);
 
     // Обновляем активный элемент в списке
     document.querySelectorAll('.dm-user-item').forEach(el => el.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
 
     // Показываем шапку чата
     const avatar = document.getElementById('dmChatAvatar');
@@ -477,11 +461,9 @@ function openConversation(otherUser) {
     document.getElementById('dmPlaceholder').style.display = 'none';
     document.getElementById('dmChatActive').style.display = 'flex';
 
-    // Запускаем real-time слушатель сообщений
     listenMessages(currentConvId);
 }
 
-// Real-time слушатель сообщений переписки
 function listenMessages(convId) {
     stopDmListener();
 
@@ -525,7 +507,6 @@ function listenMessages(convId) {
             container.appendChild(msgEl);
         });
 
-        // Прокручиваем вниз
         container.scrollTop = container.scrollHeight;
     });
 }
@@ -534,7 +515,6 @@ function stopDmListener() {
     if (dmListenerUnsub) { dmListenerUnsub(); dmListenerUnsub = null; }
 }
 
-// Отправка сообщения
 async function sendDmMessage() {
     const input = document.getElementById('dmInput');
     const text = input.value.trim();
@@ -550,7 +530,6 @@ async function sendDmMessage() {
             timestamp: serverTimestamp()
         });
 
-        // Обновляем мета-документ переписки для превью
         await setDoc(doc(db, "conversations", currentConvId), {
             participants: currentConvId.split("_"),
             lastMessage: text,
